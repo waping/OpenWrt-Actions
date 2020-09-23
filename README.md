@@ -3,8 +3,8 @@
 
 **每周六早上六点自动通过 Github Actions 进行云编译，并发布为当日日期版本**
 
-![K2P Build](https://github.com/ylqjgm/OpenWrt-Actions/workflows/K2P%20Build/badge.svg)
-![N1 Build](https://github.com/ylqjgm/OpenWrt-Actions/workflows/N1%20Build/badge.svg)
+![K2P Build by Lean](https://github.com/ylqjgm/OpenWrt-Actions/workflows/K2P%20Build%20by%20Lean/badge.svg)
+![N1 Build by Lean](https://github.com/ylqjgm/OpenWrt-Actions/workflows/N1%20Build%20by%20Lean/badge.svg)
 
 ## 使用方法
 
