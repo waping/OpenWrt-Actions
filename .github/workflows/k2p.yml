@@ -107,8 +107,5 @@ jobs:
 
       - name: WeChat
         if: env.BUILD_STATUS == 'success' && env.WECHAT == 'true' && !cancelled()
-        uses: emon100/Action-Serverchan@master
-        with:
-          SCKEY: ${{ secrets.SCKEY }}
-          text: K2P固件编译完成！
-          desp: 编译日期：${{ env.RELEASE_TAG }}
+        run: |
+          curl https://sc.ftqq.com/${{ secrets.SCKEY }}.send?text=K2P编译完成&desp=编译日期：${{ env.RELEASE_TAG }}
