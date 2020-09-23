@@ -1,0 +1,122 @@
+name: N1 Build by Lean
+
+on:
+  push:
+    tags:
+      - '*'
+
+env:
+  SSH_ACTIONS: false
+  REPO_URL: https://github.com/coolsnowwolf/lede.git
+  REPO_BRANCH: master
+  UPLOAD: true
+  RELEASE: true
+  WECHAT: true
+  TZ: Asia/Shanghai
+
+jobs:
+  build:
+    runs-on: ubuntu-18.04
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+      
+      - name: Install depends
+        run: |
+          docker rmi `docker images -q`
+          sudo rm -rf /etc/apt/sources.list.d/* /usr/share/dotnet /usr/local/lib/android /usr/lib/jvm /opt/ghc
+          sudo -E apt-get -qq update
+          sudo -E apt-get -qq install $(curl -fsSL git.io/depends-ubuntu-1804)
+          sudo -E apt-get -qq autoremove --purge
+          sudo -E apt-get -qq clean
+          sudo timedatectl set-timezone "$TZ"
+
+      - name: Clone OpenWRT
+        run: |
+          cd ${{ github.workspace }}
+          git clone --depth 1 $REPO_URL -b $REPO_BRANCH N1
+          useVersionInfo=$(git show -s --date=short --format="Author: %an<br/>Date: %cd<br/>Commit: %s")
+          echo "::set-env name=useVersionInfo::$useVersionInfo"
+          echo "::set-env name=DATE::$(TZ=UTC-8 date "+%Y%m%d")"
+          echo "::set-env name=RELEASE_DATE::$(TZ=UTC-8 date "+%Y-%m-%d")"
+      
+      - name: Package source
+        run: |
+          cd ${{ github.workspace }}/N1
+          git clone https://github.com/tuanqing/install-program package/install-program
+          svn co https://github.com/rosywrt/luci-theme-rosy/trunk/luci-theme-rosy package/luci-theme-rosy
+
+          sed -i 's/#src-git helloworld/src-git helloworld/g' feeds.conf.default
+          echo "src-git lienol https://github.com/xiaorouji/openwrt-package.git" >> feeds.conf.default
+
+          ./scripts/feeds clean
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+      
+      - name: Build config
+        run: |
+          cd ${{ github.workspace }}
+          [ -e shell/n1.sh ] && mv shell/n1.sh N1/n1.sh
+          [ -e N1/.config ] && rm -f N1/.config
+          cp config/n1.conf N1/.config
+          cd ${{ github.workspace }}/N1
+          [ -e n1.sh ] && chmod +x n1.sh && bash n1.sh
+          make defconfig
+      
+      - name: SSH connection to Actions
+        if: env.SSH_ACTIONS == 'true'
+        uses: P3TERX/debugger-action@main
+      
+      - name: Download build dependencies
+        run: |
+          cd ${{ github.workspace }}/N1
+          make download -j8
+      
+      - name: Compile OpenWRT
+        id: compile
+        run: |
+          cd ${{ github.workspace }}/N1
+          make -j$(nproc) V=s 2>&1 | tee build.log || make -j1 V=s 2>&1 | tee build.log
+          echo ::set-env name=BUILD_STATUS::"success"
+          echo ::set-env name=RELEASE_TAG::"$(TZ=UTC-8 date +"%Y.%m.%d")"
+      
+      - name: Build firmware
+        if: env.BUILD_STATUS == 'success' && !cancelled()
+        run: |
+          cd ${{ github.workspace }}
+          git clone https://github.com/tuanqing/mknop.git mknop
+          mkdir -p ${{ github.workspace }}/dist/packages
+          cp -r -f ${{ github.workspace }}/N1/bin/targets/armvirt/64/*.buildinfo ${{ github.workspace }}/dist
+          cp -r -f ${{ github.workspace }}/N1/bin/targets/armvirt/64/*.manifest ${{ github.workspace }}/dist
+          cp -r -f ${{ github.workspace }}/K2P/bin/packages/aarch64_generic/*/*.ipk ${{ github.workspace }}/dist/packages/
+          cp -r -f ${{ github.workspace }}/K2P/bin/targets/armvirt/64/packages/*.ipk ${{ github.workspace }}/dist/packages/
+          cp -r -f ${{ github.workspace }}/N1/bin/targets/armvirt/64/*.tar.gz ${{ github.workspace }}/mknop/openwrt
+
+          cd ${{ github.workspace }}/mknop
+          sudo ./make -d          
+          mv ${{ github.workspace }}/mknop/out/*/*.img ${{ github.workspace }}/dist
+
+          cd ${{ github.workspace }}/dist
+          tar -czf packages.tar.gz packages
+          rm -rf packages
+          sha256sum `ls -1 | sort` > sha256sums
+          
+          tar -czf N1.tar.gz *
+
+      - name: Upload release
+        if: env.BUILD_STATUS == 'success' && env.RELEASE == 'true' && !cancelled()
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+        with:
+          body_path: ${{ github.workspace }}/CHANGELOG.md
+          files: ${{ github.workspace }}/dist/N1.tar.gz
+      
+      - name: WeChat
+        if: env.BUILD_STATUS == 'success' && env.WECHAT == 'true' && !cancelled()
+        uses: emon100/Action-Serverchan@master
+        with:
+          SCKEY: ${{ secrets.SCKEY }}
+          text: N1固件编译完成！
+          desp: 编译日期：${{ env.RELEASE_TAG }}

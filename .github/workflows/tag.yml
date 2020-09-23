@@ -1,0 +1,30 @@
+name: Create Release
+
+on:
+  schedule:
+    - cron: 0 22 * * 5
+  push:
+    branches:
+        - "master"
+    paths:
+      - '.github/workflows/*'
+      - 'config/*'
+      - 'shell/*'
+      - '!**.md'
+  watch:
+    types: started
+
+jobs:
+  Generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: Generate tag
+        run: echo "::set-env name=TAG::$(TZ=UTC-8 date "+%Y.%m.%d")"
+        env:
+          TZ: Asia/Shanghai
+      - name: Push tag
+        uses: anothrNick/github-tag-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          CUSTOM_TAG: ${{ env.TAG }}
