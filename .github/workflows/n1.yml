@@ -38,9 +38,7 @@ jobs:
           git clone --depth 1 $REPO_URL -b $REPO_BRANCH N1
           useVersionInfo=$(git show -s --date=short --format="Author: %an<br/>Date: %cd<br/>Commit: %s")
           echo "::set-env name=useVersionInfo::$useVersionInfo"
-          echo "::set-env name=DATE::$(TZ=UTC-8 date "+%Y%m%d")"
-          echo "::set-env name=RELEASE_DATE::$(TZ=UTC-8 date "+%Y-%m-%d")"
-      
+
       - name: Package source
         run: |
           cd ${{ github.workspace }}/N1
@@ -78,11 +76,11 @@ jobs:
         run: |
           cd ${{ github.workspace }}/N1
           make -j$(nproc) V=s 2>&1 | tee build.log || make -j1 V=s 2>&1 | tee build.log
-          echo ::set-env name=BUILD_STATUS::"success"
+          echo "::set-output name=status::success"
           echo ::set-env name=RELEASE_TAG::"$(TZ=UTC-8 date +"%Y.%m.%d")"
       
       - name: Build firmware
-        if: env.BUILD_STATUS == 'success' && !cancelled()
+        if: steps.compile.outputs.status == 'success' && !cancelled()
         run: |
           cd ${{ github.workspace }}
           git clone https://github.com/tuanqing/mknop.git mknop
@@ -105,7 +103,7 @@ jobs:
           tar -czf N1.tar.gz *
 
       - name: Upload release
-        if: env.BUILD_STATUS == 'success' && env.RELEASE == 'true' && !cancelled()
+        if: steps.compile.outputs.status == 'success' && env.RELEASE == 'true' && !cancelled()
         uses: softprops/action-gh-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
@@ -114,6 +112,11 @@ jobs:
           files: ${{ github.workspace }}/dist/N1.tar.gz
       
       - name: WeChat
-        if: env.BUILD_STATUS == 'success' && env.WECHAT == 'true' && !cancelled()
+        if: steps.compile.outputs.status == 'success' && env.WECHAT == 'true' && !cancelled()
         run: |
           curl https://sc.ftqq.com/${{ secrets.SCKEY }}.send?text=N1编译完成&desp=编译日期：${{ env.RELEASE_TAG }}
+      
+      - name: WeChat
+        if: steps.compile.outputs.status != 'success' && env.WECHAT == 'true' && !cancelled()
+        run: |
+          curl https://sc.ftqq.com/${{ secrets.SCKEY }}.send?text=N1编译失败&desp=编译日期：${{ env.RELEASE_TAG }}

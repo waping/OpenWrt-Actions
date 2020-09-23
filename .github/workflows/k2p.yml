@@ -75,11 +75,11 @@ jobs:
           cd ${{ github.workspace }}/K2P
           make -j$(nproc) V=s 2>&1 | tee build.log || make -j1 V=s 2>&1 | tee build.log
           ls -la ${{ github.workspace }}/K2P/bin/targets/*/*/
-          echo ::set-env name=BUILD_STATUS::"success"
+          echo "::set-output name=status::success"
           echo ::set-env name=RELEASE_TAG::"$(TZ=UTC-8 date +"%Y.%m.%d")"
       
       - name: Copy file
-        if: env.BUILD_STATUS == 'success' && !cancelled()
+        if: steps.compile.outputs.status == 'success' && !cancelled()
         run: |
           mkdir -p ${{ github.workspace }}/dist/packages
           cp -r -f ${{ github.workspace }}/K2P/bin/targets/ramips/mt7621/*.bin ${{ github.workspace }}/dist/
@@ -97,7 +97,7 @@ jobs:
           tar -czf K2P.tar.gz *
       
       - name: Upload release
-        if: env.BUILD_STATUS == 'success' && env.RELEASE == 'true' && !cancelled()
+        if: steps.compile.outputs.status == 'success' && env.RELEASE == 'true' && !cancelled()
         uses: softprops/action-gh-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
@@ -106,6 +106,11 @@ jobs:
           files: ${{ github.workspace }}/dist/K2P.tar.gz
 
       - name: WeChat
-        if: env.BUILD_STATUS == 'success' && env.WECHAT == 'true' && !cancelled()
+        if: steps.compile.outputs.status == 'success' && env.WECHAT == 'true' && !cancelled()
         run: |
           curl https://sc.ftqq.com/${{ secrets.SCKEY }}.send?text=K2P编译完成&desp=编译日期：${{ env.RELEASE_TAG }}
+      
+      - name: WeChat
+        if: steps.compile.outputs.status != 'success' && env.WECHAT == 'true' && !cancelled()
+        run: |
+          curl https://sc.ftqq.com/${{ secrets.SCKEY }}.send?text=K2P编译失败&desp=编译日期：${{ env.RELEASE_TAG }}
