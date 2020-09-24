@@ -87,12 +87,12 @@ jobs:
           mkdir -p ${{ github.workspace }}/dist/packages
           cp -r -f ${{ github.workspace }}/N1/bin/targets/armvirt/64/*.buildinfo ${{ github.workspace }}/dist
           cp -r -f ${{ github.workspace }}/N1/bin/targets/armvirt/64/*.manifest ${{ github.workspace }}/dist
-          cp -r -f ${{ github.workspace }}/K2P/bin/packages/aarch64_generic/*/*.ipk ${{ github.workspace }}/dist/packages/
-          cp -r -f ${{ github.workspace }}/K2P/bin/targets/armvirt/64/packages/*.ipk ${{ github.workspace }}/dist/packages/
+          cp -r -f ${{ github.workspace }}/N1/bin/packages/aarch64_generic/*/*.ipk ${{ github.workspace }}/dist/packages/
+          cp -r -f ${{ github.workspace }}/N1/bin/targets/armvirt/64/packages/*.ipk ${{ github.workspace }}/dist/packages/
           cp -r -f ${{ github.workspace }}/N1/bin/targets/armvirt/64/*.tar.gz ${{ github.workspace }}/mknop/openwrt
 
           cd ${{ github.workspace }}/mknop
-          sudo ./make -d          
+          sudo ./make -d
           mv ${{ github.workspace }}/mknop/out/*/*.img ${{ github.workspace }}/dist
 
           cd ${{ github.workspace }}/dist

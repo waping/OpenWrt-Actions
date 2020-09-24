@@ -1,5 +1,8 @@
 ## Change Log
 
+### upcoming (2020/09/24 04:01 +00:00)
+- [6990a67](https://github.com/ylqjgm/OpenWrt-Actions/commit/6990a679698c4d3877b38ead1163614f26c40941) docs(文档变更): 图标修改，CHANGELOG.md (@ylqjgm)
+
 ### 2020.09.24 (2020/09/23 18:09 +00:00)
 - [5c8d24e](https://github.com/ylqjgm/OpenWrt-Actions/commit/5c8d24e289ad494c9ba1a28c67db3a9f51060058) fix(修复): 去除samb，修复通知问题 (@ylqjgm)
 
