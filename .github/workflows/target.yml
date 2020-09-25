@@ -30,11 +30,6 @@ jobs:
           echo "::set-env name=RELEASE::${RELEASE}"
           echo "::set-env name=WECHAT::${WECHAT}"
       
-      - name: 编译开始通知
-        if: env.WECHAT == 'true' && !cancelled()
-        run: |
-          curl https://sc.ftqq.com/${{ secrets.SCKEY }}.send?text=开始编译${{ github.event.inputs.target }}固件&desp=Github Actions 自动云编译开始...
-      
       - name: 初始化编译环境
         run: |
           docker rmi `docker images -q`
@@ -178,14 +173,7 @@ jobs:
             ${{ env.useVersionInfo }}
           files: ${{ github.workspace }}/dist/*
 
-      - name: 微信成功通知
+      - name: 微信通知
         if: steps.organizer.outputs.status == 'success' && env.WECHAT == 'true' && !cancelled()
         run: |
-          curl https://sc.ftqq.com/${{ secrets.SCKEY }}.send?text=${{ github.event.inputs.target }}固件编译完成&desp=编译版本: ${{ env.useVersionInfo }}
-      
-      - name: 微信失败通知
-        if: steps.organizer.outputs.status != 'success' && env.WECHAT == 'true' && !cancelled()
-        run: |
-          cd ${{ github.workspace }}/openwrt
-          echo "::set-env name=LOGS::$(tail -n 20 build.log)"
-          curl https://sc.ftqq.com/${{ secrets.SCKEY }}.send?text=${{ github.event.inputs.target }}编译失败&desp=${{ env.LOGS }}
+          [ ${{ steps.organizer.outputs.status}} == 'success' ] && curl https://sc.ftqq.com/${{ secrets.SCKEY }}.send?text=🎉${{ github.event.inputs.target }}编译完成😋|| curl https://sc.ftqq.com/${{ secrets.SCKEY }}.send?text=❌${{ github.event.inputs.target }}编译失败😂
