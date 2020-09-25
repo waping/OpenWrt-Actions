@@ -3,27 +3,39 @@
 
 **每周六早上六点自动通过 Github Actions 进行云编译，并发布为当日日期版本**
 
-![K2P Build by Lean](https://github.com/ylqjgm/OpenWrt-Actions/workflows/K2P%20Build%20by%20Lean/badge.svg)
-![N1 Build by Lean](https://github.com/ylqjgm/OpenWrt-Actions/workflows/N1%20Build%20by%20Lean/badge.svg)
-
 ## 使用方法
 
 1. 将本项目 **Fork** 到自己帐号
-2. 编辑 **config** 和 **shell** 目录下的文件，更改为自己所需
-3. 提交更新或点击 **Star** 都将触发固件编译
-4. 编译前会创建一个当日日期的 **tag**
-5. 编译完成后会将固件及ipk文件打包为 **K2P.tar.gz** 及 **N1.tar.gz** 进行发布
-6. **N1** 固件写入 **emmc** 直接执行 `n1-install`，若更新固件则上传至 **/tmp/upgrade/** 目录后执行 `n1-update`
+2. 修改 **config** 目录下的配置信息
+3. 提交更新将触发固件编译
+
+## 手动触发
+
+1. 在 **config** 下创建架构目录，如 `N1`
+2. 目录中至少包含 `.config`、`settings.ini` 两个文件，分别代表 **OpenWrt** 配置信息及编译配置信息
+3. 若需要更多自定义，请自行增加 `diy`、`files`、`patches` 目录及 `diy1.sh`、`diy2.sh`、`organizer.sh` 三个文件
+4. 在 **Actions** 中找到 **手动触发OpenWrt固件云编译** 这个项目，并点击右边的 **Run workflow**，在弹出的窗口内输入自己在 `config` 目录下创建的架构目录名称，必须区分大小写，随后点击绿色按钮即可
 
 ### K2P配置
 
-1. 登录地址：192.168.1.2
-2. 登录帐号：root
+1. 登录地址：`192.168.1.2`
+2. 登录帐号：`root`
+3. 登录密码：`password`
 
 ### N1配置
 
-1. 登录地址：192.168.1.3
-2. 登录帐号：root
+1. 登录地址：`192.168.1.3`
+2. 登录帐号：`root`
+3. 登录密码：`password`
+
+## N1写入emmc说明
+
+1. N1做好前期准备工作并配置U盘启动
+2. 将N1编译后的`.img`文件写入U盘制作启动盘
+3. N1断电并在靠近高清线的接口插入U盘后接通电源
+4. 使用网线或各种方法将PC与N1连接
+5. 使用SSH登录N1，并执行：`n1-install`
+6. 写入完成后重启并拔出U盘
 
 ## 包含插件
 
@@ -52,15 +64,13 @@
 9. netdata
 10. nfs
 11. passwall
-12. samba
-13. samba4
-14. sfe
-14. ssr-plus
-15. unblockmusic
-16. upnp
-17. vlmcsd
-18. vsftpd
-15. zerotier
+12. sfe
+13. ssr-plus
+14. unblockmusic
+15. upnp
+16. vlmcsd
+17. vsftpd
+18. zerotier
 
 ## 特别说明
 

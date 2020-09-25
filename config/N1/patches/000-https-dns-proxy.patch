@@ -1,0 +1,20 @@
+--- feeds/packages/net/https-dns-proxy/files/https-dns-proxy.init	2020-09-25 13:07:06.201920593 +0800
++++ feeds/packages/net/https-dns-proxy/files/https-dns-proxy.init	2020-09-25 13:09:58.778091574 +0800
+@@ -86,7 +86,7 @@
+ start_service() {
+ 	local p=5053
+ 	config_load 'https-dns-proxy'
+-	config_get dnsmasqConfig	'config' 'update_dnsmasq_config' '*'
++	#config_get dnsmasqConfig	'config' 'update_dnsmasq_config' '*'
+ 	dhcp_backup 'create'
+ 	config_load 'https-dns-proxy'
+ 	config_foreach start_instance 'https-dns-proxy'
+@@ -98,7 +98,7 @@
+ 
+ stop_service() {
+ 	config_load 'https-dns-proxy'
+-	config_get dnsmasqConfig	'config' 'update_dnsmasq_config' '*'
++	#config_get dnsmasqConfig	'config' 'update_dnsmasq_config' '*'
+ 	dhcp_backup 'restore'
+ 	if [ -n "$(uci -q changes dhcp)" ]; then
+ 		uci -q commit dhcp

@@ -1,0 +1,192 @@
+name: 手动触发OpenWrt固件云编译
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: '请输入要编译的固件名称'
+        required: true
+        default: 'K2P'
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build:
+    runs-on: ubuntu-18.04
+    if: github.event.repository.owner.id == github.event.sender.id
+
+    steps:
+      - name: 检出源码
+        uses: actions/checkout@main
+      
+      - name: 环境变量配置
+        run: |
+          echo "::set-env name=TARGET::${{ github.event.inputs.target }} | tr 'a-z' 'A-Z'"
+          source ${{ github.workspace }}/config/${{ env.TARGET }}/settings.ini
+          echo "::set-env name=REPO_URL::${REPO_URL}"
+          echo "::set-env name=REPO_BRANCH::${REPO_BRANCH}"
+          echo "::set-env name=SSH_ACTIONS::${SSH_ACTIONS}"
+          echo "::set-env name=UPLOAD::${UPLOAD}"
+          echo "::set-env name=RELEASE::${RELEASE}"
+          echo "::set-env name=WECHAT::${WECHAT}"
+      
+      - name: 编译开始通知
+        if: env.WECHAT == 'true' && !cancelled()
+        run: |
+          curl https://sc.ftqq.com/${{ secrets.SCKEY }}.send?text=开始编译${{ env.TARGET }}固件&desp=Github Actions 自动云编译开始...
+      
+      - name: 初始化编译环境
+        run: |
+          docker rmi `docker images -q`
+          sudo rm -rf /etc/apt/sources.list.d/* /usr/share/dotnet /usr/local/lib/android /usr/lib/jvm /opt/ghc
+          sudo -E apt-get -qq update
+          sudo -E apt-get -qq install $(curl -fsSL git.io/depends-ubuntu-1804)
+          sudo -E apt-get -qq autoremove --purge
+          sudo -E apt-get -qq clean
+          sudo timedatectl set-timezone "$TZ"
+
+      - name: 拉取源码
+        run: |
+          cd ${{ github.workspace }}
+          git clone --depth 1 $REPO_URL -b $REPO_BRANCH openwrt
+          useVersionInfo=$(git show -s --date=short --format="Author: %an<br/>date: %cd<br/>commit: %s<br/>commit hash: %H")
+          echo "::set-env name=useVersionInfo::$useVersionInfo"
+          echo "::set-env name=DATE::$(TZ=UTC-8 date "+%Y%m%d")"
+          echo "::set-env name=RELEASE_DATE::$(TZ=UTC-8 date "+%Y-%m-%d")"
+      
+      - name: 执行自定义脚本
+        run: |
+          cd ${{ github.workspace }}/openwrt
+
+          if [ -f ${{ github.workspace }}/config/${{ env.TARGET }}/diy1.sh ]; then
+            chmod +x ${{ github.workspace }}/config/${{ env.TARGET }}/diy1.sh
+            /bin/bash ${{ github.workspace }}/config/${{ env.TARGET }}/diy1.sh
+          fi
+      
+      - name: 更新feeds
+        run: |
+          cd ${{ github.workspace }}/openwrt
+
+          ./scripts/feeds clean
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+      
+      - name: 补丁、自定义文件及脚本
+        run: |
+          cd ${{ github.workspace }}/openwrt
+
+          if [ -n "$(ls -A "${{ github.workspace }}/config/${{ env.TARGET }}/patches" 2>/dev/null)" ]; then
+            find "${{ github.workspace }}/config/${{ env.TARGET }}/patches" -type f -name '*.patch' -print0 | sort -z | xargs -I % -t -0 -n 1 sh -c "cat '%'  | patch -d './' -p0 --forward" || true
+          fi
+
+          if [ -n "$(ls -A "${{ github.workspace }}/config/${{ env.TARGET }}/files" 2>/dev/null)" ]; then
+            cp -rf ${{ github.workspace }}/config/${{ env.TARGET }}/files ${{ github.workspace }}/openwrt/files
+          fi
+
+          if [ -n "$(ls -A "${{ github.workspace }}/config/${{ env.TARGET }}/diy" 2>/dev/null)" ]; then
+            cp -Rf ${{ github.workspace }}/config/${{ env.TARGET }}/diy/* ${{ github.workspace }}/openwrt/
+          fi
+
+          if [ -f ${{ github.workspace }}/config/${{ env.TARGET }}/diy2.sh ]; then
+            chmod +x ${{ github.workspace }}/config/${{ env.TARGET }}/diy2.sh
+            /bin/bash ${{ github.workspace }}/config/${{ env.TARGET }}/diy2.sh
+          fi
+      
+      - name: 载入配置
+        run: |
+          cd ${{ github.workspace }}/openwrt
+          rm -f ${{ github.workspace }}/openwrt/.config
+          mv ${{ github.workspace }}/config/${{ env.TARGET }}/.config ${{ github.workspace }}/openwrt/
+          make defconfig
+      
+      - name: 开启SSH通道
+        if: env.SSH_ACTIONS == 'true' || contains(github.event.action, 'ssh')
+        uses: P3TERX/debugger-action@main
+      
+      - name: 下载依赖
+        run: |
+          cd ${{ github.workspace }}/openwrt
+          make download -j8
+          find dl -size -1024c -exec ls -l {} \;
+          find dl -size -1024c -exec rm -f {} \;
+      
+      - name: 编译固件
+        id: compile
+        run: |
+          cd ${{ github.workspace }}/openwrt
+          echo -e "$(nproc) thread compile"
+          make -j$(nproc) 2>&1 | tee -a build.log || make -j1 V=s 2>&1 | tee -a build.log
+          ls -la ${{ github.workspace }}/openwrt/bin/targets/*/*/
+          echo "::set-output name=status::success"
+          echo "::set-env name=RELEASE_NAME::$(TZ=UTC-8 date +'%Y年%m月%d号-%H点%M分')"
+          echo ::set-env name=RELEASE_TAG::"$(TZ=UTC-8 date +"%Y%m%d-%H%M")"
+      
+      - name: 整理文件
+        id: organizer
+        if: steps.compile.outputs.status == 'success' && !cancelled()
+        run: |
+          cd ${{ github.workspace }}/
+          mkdir -p ${{ github.workspace }}/dist/packages
+          cp -r -f ${{ github.workspace }}/openwrt/bin/targets/*/*/*.tar.gz ${{ github.workspace }}/dist/
+          cp -r -f ${{ github.workspace }}/openwrt/bin/targets/*/*/*.bin ${{ github.workspace }}/dist/
+          cp -r -f ${{ github.workspace }}/openwrt/bin/targets/*/*/*.buildinfo ${{ github.workspace }}/dist/
+          cp -r -f ${{ github.workspace }}/openwrt/bin/targets/*/*/*.manifest ${{ github.workspace }}/dist/
+
+          cp -r -f ${{ github.workspace }}/openwrt/bin/packages/*/*/*.ipk ${{ github.workspace }}/dist/packages/
+          cp -r -f ${{ github.workspace }}/openwrt/bin/targets/*/*/packages/*.ipk ${{ github.workspace }}/dist/packages/
+
+          if [ -f ${{ github.workspace }}/config/${{ env.TARGET }}/organizer.sh ]; then
+            chmod +x ${{ github.workspace }}/config/${{ env.TARGET }}/organizer.sh
+            /bin/bash ${{ github.workspace }}/config/${{ env.TARGET }}/organizer.sh
+          fi
+
+          cd ${{ github.workspace }}/dist
+          tar -czf packages.tar.gz packages
+          rm -rf packages
+          sha256sum `ls -1 | sort` > sha256sums
+
+          echo "::set-output name=status::success"
+          echo "::set-env name=FIRMWARE::$PWD"
+      
+      - name: 上传奶牛快传及webtransfer
+        if: steps.organizer.outputs.status == 'success' && env.UPLOAD == 'true' && !cancelled()
+        run: |
+          curl -fsSL git.io/file-transfer | sh
+          ./transfer cow --block 2621440 -s -p 64 --no-progress ${FIRMWARE} 2>&1 | tee cowtransfer.log
+          echo "::set-env name=COWTRANSFER_URL::$(cat cowtransfer.log | grep https | cut -f3 -d" ")"
+          curl -fsSL git.io/file-transfer | sh
+          ./transfer wet -s -p 16 --no-progress ${FIRMWARE} 2>&1 | tee wetransfer.log
+          echo "::set-env name=WETRANSFER_URL::$(cat wetransfer.log | grep https | cut -f3 -d" ")"
+      
+      - name: 版本发布
+        if: steps.organizer.outputs.status == 'success' && env.RELEASE == 'true' && !cancelled()
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+        with:
+          name: ${{ env.RELEASE_NAME }}  ❤️ | ${{ env.TARGET }}-OpenWrt 自动编译
+          tag_name: ${{ env.RELEASE_TAG }}
+          body: |
+            ☆ 源码来源: ${{ env.REPO_URL }}
+            ☆ 源码分支: ${{ env.REPO_BRANCH }}
+
+            🚀 奶牛快传: ${{ env.COWTRANSFER_URL }}
+            🐤 WeTransfer: ${{ env.WETRANSFER_URL }}
+
+            ✨ 当前源码版本:
+
+            ${{ env.useVersionInfo }}
+          files: ${{ github.workspace }}/dist/*
+
+      - name: 微信成功通知
+        if: steps.organizer.outputs.status == 'success' && env.WECHAT == 'true' && !cancelled()
+        run: |
+          curl https://sc.ftqq.com/${{ secrets.SCKEY }}.send?text=${{ env.TARGET }}固件编译完成&desp=编译版本: ${{ env.useVersionInfo }}
+      
+      - name: 微信失败通知
+        if: steps.organizer.outputs.status != 'success' && env.WECHAT == 'true' && !cancelled()
+        run: |
+          cd ${{ github.workspace }}/openwrt
+          echo "::set-env name=LOGS::$(tail -n 20 build.log)"
+          curl https://sc.ftqq.com/${{ secrets.SCKEY }}.send?text=${{ env.TARGET }}编译失败&desp=${{ env.LOGS }}
