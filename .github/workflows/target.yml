@@ -22,8 +22,7 @@ jobs:
       
       - name: 环境变量配置
         run: |
-          echo "::set-env name=TARGET::${{ github.event.inputs.target }} | tr 'a-z' 'A-Z'"
-          source ${{ github.workspace }}/config/${{ env.TARGET }}/settings.ini
+          source ${{ github.workspace }}/config/${{ github.event.inputs.target }}/settings.ini
           echo "::set-env name=REPO_URL::${REPO_URL}"
           echo "::set-env name=REPO_BRANCH::${REPO_BRANCH}"
           echo "::set-env name=SSH_ACTIONS::${SSH_ACTIONS}"
@@ -34,7 +33,7 @@ jobs:
       - name: 编译开始通知
         if: env.WECHAT == 'true' && !cancelled()
         run: |
-          curl https://sc.ftqq.com/${{ secrets.SCKEY }}.send?text=开始编译${{ env.TARGET }}固件&desp=Github Actions 自动云编译开始...
+          curl https://sc.ftqq.com/${{ secrets.SCKEY }}.send?text=开始编译${{ github.event.inputs.target }}固件&desp=Github Actions 自动云编译开始...
       
       - name: 初始化编译环境
         run: |
@@ -59,9 +58,9 @@ jobs:
         run: |
           cd ${{ github.workspace }}/openwrt
 
-          if [ -f ${{ github.workspace }}/config/${{ env.TARGET }}/diy1.sh ]; then
-            chmod +x ${{ github.workspace }}/config/${{ env.TARGET }}/diy1.sh
-            /bin/bash ${{ github.workspace }}/config/${{ env.TARGET }}/diy1.sh
+          if [ -f ${{ github.workspace }}/config/${{ github.event.inputs.target }}/diy1.sh ]; then
+            chmod +x ${{ github.workspace }}/config/${{ github.event.inputs.target }}/diy1.sh
+            /bin/bash ${{ github.workspace }}/config/${{ github.event.inputs.target }}/diy1.sh
           fi
       
       - name: 更新feeds
@@ -76,28 +75,28 @@ jobs:
         run: |
           cd ${{ github.workspace }}/openwrt
 
-          if [ -n "$(ls -A "${{ github.workspace }}/config/${{ env.TARGET }}/patches" 2>/dev/null)" ]; then
-            find "${{ github.workspace }}/config/${{ env.TARGET }}/patches" -type f -name '*.patch' -print0 | sort -z | xargs -I % -t -0 -n 1 sh -c "cat '%'  | patch -d './' -p0 --forward" || true
+          if [ -n "$(ls -A "${{ github.workspace }}/config/${{ github.event.inputs.target }}/patches" 2>/dev/null)" ]; then
+            find "${{ github.workspace }}/config/${{ github.event.inputs.target }}/patches" -type f -name '*.patch' -print0 | sort -z | xargs -I % -t -0 -n 1 sh -c "cat '%'  | patch -d './' -p0 --forward" || true
           fi
 
-          if [ -n "$(ls -A "${{ github.workspace }}/config/${{ env.TARGET }}/files" 2>/dev/null)" ]; then
-            cp -rf ${{ github.workspace }}/config/${{ env.TARGET }}/files ${{ github.workspace }}/openwrt/files
+          if [ -n "$(ls -A "${{ github.workspace }}/config/${{ github.event.inputs.target }}/files" 2>/dev/null)" ]; then
+            cp -rf ${{ github.workspace }}/config/${{ github.event.inputs.target }}/files ${{ github.workspace }}/openwrt/files
           fi
 
-          if [ -n "$(ls -A "${{ github.workspace }}/config/${{ env.TARGET }}/diy" 2>/dev/null)" ]; then
-            cp -Rf ${{ github.workspace }}/config/${{ env.TARGET }}/diy/* ${{ github.workspace }}/openwrt/
+          if [ -n "$(ls -A "${{ github.workspace }}/config/${{ github.event.inputs.target }}/diy" 2>/dev/null)" ]; then
+            cp -Rf ${{ github.workspace }}/config/${{ github.event.inputs.target }}/diy/* ${{ github.workspace }}/openwrt/
           fi
 
-          if [ -f ${{ github.workspace }}/config/${{ env.TARGET }}/diy2.sh ]; then
-            chmod +x ${{ github.workspace }}/config/${{ env.TARGET }}/diy2.sh
-            /bin/bash ${{ github.workspace }}/config/${{ env.TARGET }}/diy2.sh
+          if [ -f ${{ github.workspace }}/config/${{ github.event.inputs.target }}/diy2.sh ]; then
+            chmod +x ${{ github.workspace }}/config/${{ github.event.inputs.target }}/diy2.sh
+            /bin/bash ${{ github.workspace }}/config/${{ github.event.inputs.target }}/diy2.sh
           fi
       
       - name: 载入配置
         run: |
           cd ${{ github.workspace }}/openwrt
           rm -f ${{ github.workspace }}/openwrt/.config
-          mv ${{ github.workspace }}/config/${{ env.TARGET }}/.config ${{ github.workspace }}/openwrt/
+          mv ${{ github.workspace }}/config/${{ github.event.inputs.target }}/.config ${{ github.workspace }}/openwrt/
           make defconfig
       
       - name: 开启SSH通道
@@ -136,9 +135,9 @@ jobs:
           cp -r -f ${{ github.workspace }}/openwrt/bin/packages/*/*/*.ipk ${{ github.workspace }}/dist/packages/
           cp -r -f ${{ github.workspace }}/openwrt/bin/targets/*/*/packages/*.ipk ${{ github.workspace }}/dist/packages/
 
-          if [ -f ${{ github.workspace }}/config/${{ env.TARGET }}/organizer.sh ]; then
-            chmod +x ${{ github.workspace }}/config/${{ env.TARGET }}/organizer.sh
-            /bin/bash ${{ github.workspace }}/config/${{ env.TARGET }}/organizer.sh
+          if [ -f ${{ github.workspace }}/config/${{ github.event.inputs.target }}/organizer.sh ]; then
+            chmod +x ${{ github.workspace }}/config/${{ github.event.inputs.target }}/organizer.sh
+            /bin/bash ${{ github.workspace }}/config/${{ github.event.inputs.target }}/organizer.sh
           fi
 
           cd ${{ github.workspace }}/dist
@@ -165,7 +164,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
         with:
-          name: ${{ env.RELEASE_NAME }}  ❤️ | ${{ env.TARGET }}-OpenWrt 自动编译
+          name: ${{ env.RELEASE_NAME }}  ❤️ | ${{ github.event.inputs.target }}-OpenWrt 自动编译
           tag_name: ${{ env.RELEASE_TAG }}
           body: |
             ☆ 源码来源: ${{ env.REPO_URL }}
@@ -182,11 +181,11 @@ jobs:
       - name: 微信成功通知
         if: steps.organizer.outputs.status == 'success' && env.WECHAT == 'true' && !cancelled()
         run: |
-          curl https://sc.ftqq.com/${{ secrets.SCKEY }}.send?text=${{ env.TARGET }}固件编译完成&desp=编译版本: ${{ env.useVersionInfo }}
+          curl https://sc.ftqq.com/${{ secrets.SCKEY }}.send?text=${{ github.event.inputs.target }}固件编译完成&desp=编译版本: ${{ env.useVersionInfo }}
       
       - name: 微信失败通知
         if: steps.organizer.outputs.status != 'success' && env.WECHAT == 'true' && !cancelled()
         run: |
           cd ${{ github.workspace }}/openwrt
           echo "::set-env name=LOGS::$(tail -n 20 build.log)"
-          curl https://sc.ftqq.com/${{ secrets.SCKEY }}.send?text=${{ env.TARGET }}编译失败&desp=${{ env.LOGS }}
+          curl https://sc.ftqq.com/${{ secrets.SCKEY }}.send?text=${{ github.event.inputs.target }}编译失败&desp=${{ env.LOGS }}

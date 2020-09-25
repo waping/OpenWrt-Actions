@@ -1,6 +1,7 @@
 ## Change Log
 
-### upcoming (2020/09/25 05:29 +00:00)
+### upcoming (2020/09/25 05:32 +00:00)
+- [74a57c1](https://github.com/ylqjgm/OpenWrt-Actions/commit/74a57c1351bbefd6dfed999f5b174eeea2a6874e) fix(自动触发): 自动触发条件修复 (@ylqjgm)
 - [f0b7bbb](https://github.com/ylqjgm/OpenWrt-Actions/commit/f0b7bbb1f823b7d790dca5c8caff1c8e4c78ea29) refactor(重构): 重新构建代码，增加手动触发模式，修复passwall导致转发问题，新增多架构编译功能 (@ylqjgm)
 
 ### 2020.09.24 (2020/09/24 04:02 +00:00)
