@@ -51,26 +51,23 @@
 
 ### N1插件
 
-1. adbyby-plus
-2. aria2
-3. autoreboot
+1. aria2
+2. autoreboot
 3. baidupcs-web
 4. cifs-mount
-5. cifsd
-6. docker
-7. filebrowser
-8. filetransfer
+5. docker
+6. filebrowser
+7. filetransfer
 8. flowoffload
 9. netdata
 10. nfs
 11. passwall
-12. sfe
-13. ssr-plus
-14. unblockmusic
-15. upnp
-16. vlmcsd
-17. vsftpd
-18. zerotier
+12. ssr-plus
+13. unblockmusic
+14. upnp
+15. vlmcsd
+16. vsftpd
+17. zerotier
 
 ## 特别说明
 
