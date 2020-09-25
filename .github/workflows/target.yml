@@ -29,6 +29,7 @@ jobs:
           echo "::set-env name=UPLOAD::${UPLOAD}"
           echo "::set-env name=RELEASE::${RELEASE}"
           echo "::set-env name=WECHAT::${WECHAT}"
+          echo "::set-env name=TZ::${TZ}"
       
       - name: 初始化编译环境
         run: |
