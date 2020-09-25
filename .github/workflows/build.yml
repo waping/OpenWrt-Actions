@@ -130,12 +130,9 @@ jobs:
           mkdir -p ${{ github.workspace }}/dist/packages
           cd ${{ github.workspace }}/openwrt/bin/targets/*/*
           find -name "*.buildinfo*" | xargs -i mv -f {} ${{ github.workspace }}/dist/
-          find -name "*kernel.bin*" | xargs -i mv -f {} ${{ github.workspace }}/dist/
-          find -name "*kernel1.bin*" | xargs -i mv -f {} ${{ github.workspace }}/dist/
-          find -name "*rootfs*" | xargs -i mv -f {} ${{ github.workspace }}/dist/
+          find -name "*.bin*" | xargs -i mv -f {} ${{ github.workspace }}/dist/
           find -name "*.manifest*" | xargs -i mv -f {} ${{ github.workspace }}/dist/
-          find -name "*vmlinuz*" | xargs -i mv -f {} ${{ github.workspace }}/dist/
-          find -name "*esxi.vmdk*" | xargs -i mv -f {} ${{ github.workspace }}/dist/
+          find -name "*.gz*" | xargs -i mv -f {} ${{ github.workspace }}/dist/
 
           cp -r -f ${{ github.workspace }}/openwrt/bin/packages/*/*/*.ipk ${{ github.workspace }}/dist/packages/
           cp -r -f ${{ github.workspace }}/openwrt/bin/targets/*/*/packages/*.ipk ${{ github.workspace }}/dist/packages/
