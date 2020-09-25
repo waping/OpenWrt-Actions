@@ -78,3 +78,4 @@
 2. 插件使用 [https://github.com/xiaorouji/openwrt-package.git](https://github.com/xiaorouji/openwrt-package.git)
 3. N1打包使用 [https://github.com/tuanqing/mknop.git](https://github.com/tuanqing/mknop.git)
 4. emmc写入使用 [https://github.com/tuanqing/install-program.git](https://github.com/tuanqing/install-program.git)
+5. 代码参考 [https://github.com/281677160/build-openwrt.git](https://github.com/281677160/build-openwrt.git)

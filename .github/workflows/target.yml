@@ -121,15 +121,20 @@ jobs:
         id: organizer
         if: steps.compile.outputs.status == 'success' && !cancelled()
         run: |
-          cd ${{ github.workspace }}/
           mkdir -p ${{ github.workspace }}/dist/packages
-          cp -r -f ${{ github.workspace }}/openwrt/bin/targets/*/*/*.tar.gz ${{ github.workspace }}/dist/
-          cp -r -f ${{ github.workspace }}/openwrt/bin/targets/*/*/*.bin ${{ github.workspace }}/dist/
-          cp -r -f ${{ github.workspace }}/openwrt/bin/targets/*/*/*.buildinfo ${{ github.workspace }}/dist/
-          cp -r -f ${{ github.workspace }}/openwrt/bin/targets/*/*/*.manifest ${{ github.workspace }}/dist/
+          cd ${{ github.workspace }}/openwrt/bin/targets/*/*
+          find -name "*.buildinfo*" | xargs -i mv ${{ github.workspace }}/dist/
+          find -name "*kernel.bin*" | xargs -i mv ${{ github.workspace }}/dist/
+          find -name "*kernel1.bin*" | xargs -i mv ${{ github.workspace }}/dist/
+          find -name "*rootfs*" | xargs -i mv ${{ github.workspace }}/dist/
+          find -name "*.manifest*" | xargs -i mv ${{ github.workspace }}/dist/
+          find -name "*vmlinuz*" | xargs -i mv ${{ github.workspace }}/dist/
+          find -name "*esxi.vmdk*" | xargs -i mv ${{ github.workspace }}/dist/
 
           cp -r -f ${{ github.workspace }}/openwrt/bin/packages/*/*/*.ipk ${{ github.workspace }}/dist/packages/
           cp -r -f ${{ github.workspace }}/openwrt/bin/targets/*/*/packages/*.ipk ${{ github.workspace }}/dist/packages/
+
+          cd ${{ github.workspace }}
 
           if [ -f ${{ github.workspace }}/config/${{ github.event.inputs.target }}/organizer.sh ]; then
             chmod +x ${{ github.workspace }}/config/${{ github.event.inputs.target }}/organizer.sh

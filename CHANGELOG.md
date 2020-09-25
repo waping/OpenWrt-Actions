@@ -1,6 +1,7 @@
 ## Change Log
 
-### upcoming (2020/09/25 06:32 +00:00)
+### upcoming (2020/09/25 08:01 +00:00)
+- [f551d5c](https://github.com/ylqjgm/OpenWrt-Actions/commit/f551d5cce3790e028e2e37cd1c4ed2c60a6c91c4) fix(修复TZ错误): 配置中的TZ变量未进行初始化问题\ (@ylqjgm)
 - [71a9907](https://github.com/ylqjgm/OpenWrt-Actions/commit/71a990792623968c1bd826442908546ad197eb39) fix(微信通知): 修复微信通知问题 (@ylqjgm)
 - [5830547](https://github.com/ylqjgm/OpenWrt-Actions/commit/58305471ca60c6e18b5c3f073991fbebc26e8890) fix(手动触发): 手动触发目录名称问题 (@ylqjgm)
 - [74a57c1](https://github.com/ylqjgm/OpenWrt-Actions/commit/74a57c1351bbefd6dfed999f5b174eeea2a6874e) fix(自动触发): 自动触发条件修复 (@ylqjgm)
