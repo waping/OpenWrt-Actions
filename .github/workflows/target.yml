@@ -132,9 +132,9 @@ jobs:
 
           cd ${{ github.workspace }}
 
-          if [ -f ${{ github.workspace }}/config/${{matrix.target}}/organizer.sh ]; then
-            chmod +x ${{ github.workspace }}/config/${{matrix.target}}/organizer.sh
-            /bin/bash ${{ github.workspace }}/config/${{matrix.target}}/organizer.sh
+          if [ -f ${{ github.workspace }}/config/${{ github.event.inputs.target }}/organizer.sh ]; then
+            chmod +x ${{ github.workspace }}/config/${{ github.event.inputs.target }}/organizer.sh
+            /bin/bash ${{ github.workspace }}/config/${{ github.event.inputs.target }}/organizer.sh
           fi
 
           cd ${{ github.workspace }}/dist
