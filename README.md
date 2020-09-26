@@ -3,6 +3,8 @@
 
 **每周六早上六点自动通过 Github Actions 进行云编译，并发布为当日日期版本**
 
+![手动触发OpenWrt固件云编译](https://github.com/ylqjgm/OpenWrt-Actions/workflows/%E6%89%8B%E5%8A%A8%E8%A7%A6%E5%8F%91OpenWrt%E5%9B%BA%E4%BB%B6%E4%BA%91%E7%BC%96%E8%AF%91/badge.svg)![OpenWrt固件云编译](https://github.com/ylqjgm/OpenWrt-Actions/workflows/OpenWrt%E5%9B%BA%E4%BB%B6%E4%BA%91%E7%BC%96%E8%AF%91/badge.svg)![GitHub release (latest by date)](https://img.shields.io/github/v/release/ylqjgm/openwrt-actions)![GitHub repo size](https://img.shields.io/github/repo-size/ylqjgm/openwrt-actions)![GitHub All Releases](https://img.shields.io/github/downloads/ylqjgm/openwrt-actions/total)
+
 ## 使用方法
 
 1. 将本项目 **Fork** 到自己帐号
