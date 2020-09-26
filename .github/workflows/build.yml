@@ -4,12 +4,9 @@ on:
   schedule:
     - cron: 0 20 * * 5
   push:
-    branches:
-      - master
-    paths:
-      - '.github/workflows/build.yml'
-      - 'config/*'
-      - '!**.md'
+    paths-ignore:
+      - '**.md'
+      - '.github/workflows/target.yml'
 
 jobs:
   build:
