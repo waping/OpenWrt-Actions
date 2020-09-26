@@ -1,4 +1,4 @@
-name: 手动触发OpenWrt固件云编译
+name: OpenWrt 固件手动云编译
 
 on:
   workflow_dispatch:

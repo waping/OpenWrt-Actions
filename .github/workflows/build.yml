@@ -1,4 +1,4 @@
-name: OpenWrt固件云编译
+name: OpenWrt 固件自动云编译
 
 on:
   schedule:
