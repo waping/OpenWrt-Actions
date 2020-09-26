@@ -1,7 +1,7 @@
 # 自动构建斐讯 K2P/N1 OpenWrt 固件脚本
 # Automatically Build OpenWrt Firmware for PHICOMM K2P/N1
 
-**每周六早上六点自动通过 Github Actions 进行云编译，并发布为当日日期版本**
+**每周自动通过 Github Actions 进行云编译，并发布为当日日期版本**
 
 ![手动触发OpenWrt固件云编译](https://github.com/ylqjgm/OpenWrt-Actions/workflows/%E6%89%8B%E5%8A%A8%E8%A7%A6%E5%8F%91OpenWrt%E5%9B%BA%E4%BB%B6%E4%BA%91%E7%BC%96%E8%AF%91/badge.svg) ![OpenWrt固件云编译](https://github.com/ylqjgm/OpenWrt-Actions/workflows/OpenWrt%E5%9B%BA%E4%BB%B6%E4%BA%91%E7%BC%96%E8%AF%91/badge.svg) ![GitHub release (latest by date)](https://img.shields.io/github/v/release/ylqjgm/openwrt-actions) ![GitHub repo size](https://img.shields.io/github/repo-size/ylqjgm/openwrt-actions) ![GitHub All Releases](https://img.shields.io/github/downloads/ylqjgm/openwrt-actions/total)
 
@@ -32,14 +32,40 @@
 
 ## N1写入emmc说明
 
+> 对应 **config/N1** 目录下的 `organizer.sh`（tuanqing）和 `organizer2.sh` （flippy）
+> 想使用哪种方式只需要将该文件更改为 `organizer.sh` 即可
+> **默认使用 `tuanqing`**
+
 1. N1做好前期准备工作并配置U盘启动
 2. 将N1编译后的`.img`文件写入U盘制作启动盘
 3. N1断电并在靠近高清线的接口插入U盘后接通电源
 4. 使用网线或各种方法将PC与N1连接
-5. 使用SSH登录N1，并执行：`n1-install`
-6. 写入完成后重启并拔出U盘
 
-## 包含插件
+### tuanqing 安装
+
+`n1-install && reboot`
+
+### tuanqing 更新
+
+`n1-update && reboot`
+
+### tuanqing 恢复
+
+`tune2fs -L "D" /dev/mmcblk1p3 && reboot`
+
+### flippy 安装
+
+`cd ~ && ./inst-to-emmc.sh && reboot`
+
+### flippy 更新
+
+`cd ~ && ./update-to-emmc.sh && reboot`
+
+### flippy 恢复
+
+`dd if=/root/u-boot-2015-phicomm-n1.bin of=/dev/mmcblk1 && reboot`
+
+## 插件说明
 
 ### K2P插件
 
@@ -76,5 +102,5 @@
 1. 源码使用 [https://github.com/coolsnowwolf/lede.git](https://github.com/coolsnowwolf/lede.git)
 2. 插件使用 [https://github.com/xiaorouji/openwrt-package.git](https://github.com/xiaorouji/openwrt-package.git)
 3. N1打包使用 [https://github.com/tuanqing/mknop.git](https://github.com/tuanqing/mknop.git)
-4. emmc写入使用 [https://github.com/tuanqing/install-program.git](https://github.com/tuanqing/install-program.git)
+4. N1下emmc写入使用 [tuanqing](https://github.com/tuanqing/install-program.git) 与 [flippy](https://www.right.com.cn/forum/thread-981406-1-1.html)
 5. 代码参考 [https://github.com/281677160/build-openwrt.git](https://github.com/281677160/build-openwrt.git)
