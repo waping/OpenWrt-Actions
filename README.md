@@ -35,6 +35,7 @@
 > 对应 **config/N1** 目录下的 `organizer.sh`（tuanqing）和 `organizer2.sh` （flippy）
 > 想使用哪种方式只需要将该文件更改为 `organizer.sh` 即可
 > **默认使用 `tuanqing`**
+> **目前`flippy`版本打包可能存在问题，请暂时不要使用**
 
 1. N1做好前期准备工作并配置U盘启动
 2. 将N1编译后的`.img`文件写入U盘制作启动盘

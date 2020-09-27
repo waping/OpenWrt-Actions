@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# 暂时不稳定，可能出现无法写入emmc情况，建议有线考虑tuanqing版本
+
 echo "Build Firmware"
 
 VER=`curl --silent "https://api.github.com/repos/ylqjgm/emmc/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/'`
