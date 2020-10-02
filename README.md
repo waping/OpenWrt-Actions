@@ -3,7 +3,7 @@
 
 **每周自动通过 Github Actions 进行云编译，并发布为当日日期版本**
 
-![手动触发OpenWrt固件云编译](https://github.com/ylqjgm/OpenWrt-Actions/workflows/%E6%89%8B%E5%8A%A8%E8%A7%A6%E5%8F%91OpenWrt%E5%9B%BA%E4%BB%B6%E4%BA%91%E7%BC%96%E8%AF%91/badge.svg) ![OpenWrt固件云编译](https://github.com/ylqjgm/OpenWrt-Actions/workflows/OpenWrt%E5%9B%BA%E4%BB%B6%E4%BA%91%E7%BC%96%E8%AF%91/badge.svg) ![GitHub release (latest by date)](https://img.shields.io/github/v/release/ylqjgm/openwrt-actions) ![GitHub repo size](https://img.shields.io/github/repo-size/ylqjgm/openwrt-actions) ![GitHub All Releases](https://img.shields.io/github/downloads/ylqjgm/openwrt-actions/total)
+![手动触发OpenWrt固件云编译](https://github.com/ylqjgm/OpenWrt-Actions/workflows/%E6%89%8B%E5%8A%A8%E8%A7%A6%E5%8F%91OpenWrt%E5%9B%BA%E4%BB%B6%E4%BA%91%E7%BC%96%E8%AF%91/badge.svg) ![OpenWrt 固件自动云编译](https://github.com/ylqjgm/OpenWrt-Actions/workflows/OpenWrt%20%E5%9B%BA%E4%BB%B6%E8%87%AA%E5%8A%A8%E4%BA%91%E7%BC%96%E8%AF%91/badge.svg) ![GitHub release (latest by date)](https://img.shields.io/github/v/release/ylqjgm/openwrt-actions) ![GitHub repo size](https://img.shields.io/github/repo-size/ylqjgm/openwrt-actions) ![GitHub All Releases](https://img.shields.io/github/downloads/ylqjgm/openwrt-actions/total)
 
 ## 使用方法
 
@@ -32,39 +32,22 @@
 
 ## N1写入emmc说明
 
-> 对应 **config/N1** 目录下的 `organizer.sh`（tuanqing）和 `organizer2.sh` （flippy）
-> 想使用哪种方式只需要将该文件更改为 `organizer.sh` 即可
-> **默认使用 `tuanqing`**
-> **目前`flippy`版本打包可能存在问题，请暂时不要使用**
-
 1. N1做好前期准备工作并配置U盘启动
 2. 将N1编译后的`.img`文件写入U盘制作启动盘
 3. N1断电并在靠近高清线的接口插入U盘后接通电源
 4. 使用网线或各种方法将PC与N1连接
 
-### tuanqing 安装
+### 安装
 
 `n1-install && reboot`
 
-### tuanqing 更新
+### 更新
 
 `n1-update && reboot`
 
-### tuanqing 恢复
+### 恢复
 
 `tune2fs -L "D" /dev/mmcblk1p3 && reboot`
-
-### flippy 安装
-
-`cd ~ && ./inst-to-emmc.sh && reboot`
-
-### flippy 更新
-
-`cd ~ && ./update-to-emmc.sh && reboot`
-
-### flippy 恢复
-
-`dd if=/root/u-boot-2015-phicomm-n1.bin of=/dev/mmcblk1 && reboot`
 
 ## 插件说明
 
