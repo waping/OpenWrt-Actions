@@ -3,12 +3,12 @@ name: OpenWrt 固件自动云编译
 on:
   schedule:
     - cron: 0 20 * * 5
-  push:
-    branches:
-      - master
-    paths-ignore:
-      - '**.md'
-      - '.github/workflows/target.yml'
+#  push:
+#    branches:
+#      - master
+#    paths-ignore:
+#      - '**.md'
+#      - '.github/workflows/target.yml'
 
 jobs:
   build:
@@ -24,7 +24,7 @@ jobs:
     steps:
       - name: 检出源码
         uses: actions/checkout@main
-      
+
       - name: 环境变量配置
         run: |
           source ${{ github.workspace }}/config/${{ matrix.target }}/settings.ini
@@ -35,7 +35,7 @@ jobs:
           echo "RELEASE=$RELEASE" >> $GITHUB_ENV
           echo "WECHAT=$WECHAT" >> $GITHUB_ENV
           echo "TZ=$TZ" >> $GITHUB_ENV
-      
+
       - name: 初始化编译环境
         run: |
           docker rmi `docker images -q`
@@ -52,7 +52,7 @@ jobs:
           git clone --depth 1 ${{ env.REPO_URL }} -b ${{ env.REPO_BRANCH }} openwrt
           useVersionInfo=$(git show -s --date=short --format="Author: %an<br/>date: %cd<br/>commit: %s<br/>commit hash: %H")
           echo "useVersionInfo=$useVersionInfo" >> $GITHUB_ENV
-      
+
       - name: 执行自定义脚本
         run: |
           cd ${{ github.workspace }}/openwrt
@@ -61,7 +61,7 @@ jobs:
             chmod +x ${{ github.workspace }}/config/${{ matrix.target }}/diy1.sh
             /bin/bash ${{ github.workspace }}/config/${{ matrix.target }}/diy1.sh
           fi
-      
+
       - name: 更新feeds
         run: |
           cd ${{ github.workspace }}/openwrt
@@ -69,7 +69,7 @@ jobs:
           ./scripts/feeds clean
           ./scripts/feeds update -a
           ./scripts/feeds install -a
-      
+
       - name: 补丁、自定义文件及脚本
         run: |
           cd ${{ github.workspace }}/openwrt
@@ -90,25 +90,25 @@ jobs:
             chmod +x ${{ github.workspace }}/config/${{ matrix.target }}/diy2.sh
             /bin/bash ${{ github.workspace }}/config/${{ matrix.target }}/diy2.sh
           fi
-      
+
       - name: 载入配置
         run: |
           cd ${{ github.workspace }}/openwrt
           rm -f ${{ github.workspace }}/openwrt/.config
           mv ${{ github.workspace }}/config/${{ matrix.target }}/.config ${{ github.workspace }}/openwrt/
           make defconfig
-      
+
       - name: 开启SSH通道
         if: env.SSH_ACTIONS == 'true' || contains(github.event.action, 'ssh')
         uses: P3TERX/debugger-action@main
-      
+
       - name: 下载依赖
         run: |
           cd ${{ github.workspace }}/openwrt
           make download -j8
           find dl -size -1024c -exec ls -l {} \;
           find dl -size -1024c -exec rm -f {} \;
-      
+
       - name: 编译固件
         id: compile
         run: |
@@ -150,7 +150,7 @@ jobs:
 
           echo "::set-output name=status::success"
           echo "FIRMWARE=$PWD" >> $GITHUB_ENV
-      
+
       - name: 上传奶牛快传及webtransfer
         id: upload
         if: steps.organizer.outputs.status == 'success' && env.UPLOAD == 'true' && !cancelled()
@@ -161,7 +161,7 @@ jobs:
           curl -fsSL git.io/file-transfer | sh
           ./transfer wet -s -p 16 --no-progress ${{ env.FIRMWARE }} 2>&1 | tee wetransfer.log
           echo "::set-output name=wetransfer::$(cat wetransfer.log | grep https | cut -f3 -d" ")"
-      
+
       - name: 版本发布
         if: steps.organizer.outputs.status == 'success' && env.RELEASE == 'true' && !cancelled()
         uses: softprops/action-gh-release@v1
