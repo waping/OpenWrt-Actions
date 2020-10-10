@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-18.04
     if: github.event.repository.owner.id == github.event.sender.id
 
-    name: ${{matrix.target}} 固件云编译
+    name: ${{ matrix.target }} 固件云编译
     strategy:
       fail-fast: false
       matrix:
@@ -27,14 +27,14 @@ jobs:
       
       - name: 环境变量配置
         run: |
-          source ${{ github.workspace }}/config/${{matrix.target}}/settings.ini
-          echo "::set-env name=REPO_URL::${REPO_URL}"
-          echo "::set-env name=REPO_BRANCH::${REPO_BRANCH}"
-          echo "::set-env name=SSH_ACTIONS::${SSH_ACTIONS}"
-          echo "::set-env name=UPLOAD::${UPLOAD}"
-          echo "::set-env name=RELEASE::${RELEASE}"
-          echo "::set-env name=WECHAT::${WECHAT}"
-          echo "::set-env name=TZ::${TZ}"
+          source ${{ github.workspace }}/config/${{ matrix.target }}/settings.ini
+          echo "REPO_URL=$REPO_URL" >> $GITHUB_ENV
+          echo "REPO_BRANCH=$REPO_BRANCH" >> $GITHUB_ENV
+          echo "SSH_ACTIONS=$SSH_ACTIONS" >> $GITHUB_ENV
+          echo "UPLOAD=$UPLOAD" >> $GITHUB_ENV
+          echo "RELEASE=$RELEASE" >> $GITHUB_ENV
+          echo "WECHAT=$WECHAT" >> $GITHUB_ENV
+          echo "TZ=$TZ" >> $GITHUB_ENV
       
       - name: 初始化编译环境
         run: |
@@ -44,24 +44,22 @@ jobs:
           sudo -E apt-get -qq install $(curl -fsSL git.io/depends-ubuntu-1804)
           sudo -E apt-get -qq autoremove --purge
           sudo -E apt-get -qq clean
-          sudo timedatectl set-timezone "$TZ"
+          sudo timedatectl set-timezone "${{ env.TZ }}"
 
       - name: 拉取源码
         run: |
           cd ${{ github.workspace }}
-          git clone --depth 1 $REPO_URL -b $REPO_BRANCH openwrt
+          git clone --depth 1 ${{ env.REPO_URL }} -b ${{ env.REPO_BRANCH }} openwrt
           useVersionInfo=$(git show -s --date=short --format="Author: %an<br/>date: %cd<br/>commit: %s<br/>commit hash: %H")
-          echo "::set-env name=useVersionInfo::$useVersionInfo"
-          echo "::set-env name=DATE::$(TZ=UTC-8 date "+%Y%m%d")"
-          echo "::set-env name=RELEASE_DATE::$(TZ=UTC-8 date "+%Y-%m-%d")"
+          echo "useVersionInfo=$useVersionInfo" >> $GITHUB_ENV
       
       - name: 执行自定义脚本
         run: |
           cd ${{ github.workspace }}/openwrt
 
-          if [ -f ${{ github.workspace }}/config/${{matrix.target}}/diy1.sh ]; then
-            chmod +x ${{ github.workspace }}/config/${{matrix.target}}/diy1.sh
-            /bin/bash ${{ github.workspace }}/config/${{matrix.target}}/diy1.sh
+          if [ -f ${{ github.workspace }}/config/${{ matrix.target }}/diy1.sh ]; then
+            chmod +x ${{ github.workspace }}/config/${{ matrix.target }}/diy1.sh
+            /bin/bash ${{ github.workspace }}/config/${{ matrix.target }}/diy1.sh
           fi
       
       - name: 更新feeds
@@ -76,28 +74,28 @@ jobs:
         run: |
           cd ${{ github.workspace }}/openwrt
 
-          if [ -n "$(ls -A "${{ github.workspace }}/config/${{matrix.target}}/patches" 2>/dev/null)" ]; then
-            find "${{ github.workspace }}/config/${{matrix.target}}/patches" -type f -name '*.patch' -print0 | sort -z | xargs -I % -t -0 -n 1 sh -c "cat '%'  | patch -d './' -p0 --forward" || true
+          if [ -n "$(ls -A "${{ github.workspace }}/config/${{ matrix.target }}/patches" 2>/dev/null)" ]; then
+            find "${{ github.workspace }}/config/${{ matrix.target }}/patches" -type f -name '*.patch' -print0 | sort -z | xargs -I % -t -0 -n 1 sh -c "cat '%'  | patch -d './' -p0 --forward" || true
           fi
 
-          if [ -n "$(ls -A "${{ github.workspace }}/config/${{matrix.target}}/files" 2>/dev/null)" ]; then
-            cp -rf ${{ github.workspace }}/config/${{matrix.target}}/files ${{ github.workspace }}/openwrt/files
+          if [ -n "$(ls -A "${{ github.workspace }}/config/${{ matrix.target }}/files" 2>/dev/null)" ]; then
+            cp -rf ${{ github.workspace }}/config/${{ matrix.target }}/files ${{ github.workspace }}/openwrt/files
           fi
 
-          if [ -n "$(ls -A "${{ github.workspace }}/config/${{matrix.target}}/diy" 2>/dev/null)" ]; then
-            cp -Rf ${{ github.workspace }}/config/${{matrix.target}}/diy/* ${{ github.workspace }}/openwrt/
+          if [ -n "$(ls -A "${{ github.workspace }}/config/${{ matrix.target }}/diy" 2>/dev/null)" ]; then
+            cp -Rf ${{ github.workspace }}/config/${{ matrix.target }}/diy/* ${{ github.workspace }}/openwrt/
           fi
 
-          if [ -f ${{ github.workspace }}/config/${{matrix.target}}/diy2.sh ]; then
-            chmod +x ${{ github.workspace }}/config/${{matrix.target}}/diy2.sh
-            /bin/bash ${{ github.workspace }}/config/${{matrix.target}}/diy2.sh
+          if [ -f ${{ github.workspace }}/config/${{ matrix.target }}/diy2.sh ]; then
+            chmod +x ${{ github.workspace }}/config/${{ matrix.target }}/diy2.sh
+            /bin/bash ${{ github.workspace }}/config/${{ matrix.target }}/diy2.sh
           fi
       
       - name: 载入配置
         run: |
           cd ${{ github.workspace }}/openwrt
           rm -f ${{ github.workspace }}/openwrt/.config
-          mv ${{ github.workspace }}/config/${{matrix.target}}/.config ${{ github.workspace }}/openwrt/
+          mv ${{ github.workspace }}/config/${{ matrix.target }}/.config ${{ github.workspace }}/openwrt/
           make defconfig
       
       - name: 开启SSH通道
@@ -119,8 +117,8 @@ jobs:
           make -j$(nproc) 2>&1 | tee -a build.log || make -j1 V=s 2>&1 | tee -a build.log
           ls -la ${{ github.workspace }}/openwrt/bin/targets/*/*/
           echo "::set-output name=status::success"
-          echo "::set-env name=RELEASE_NAME::$(TZ=UTC-8 date +'%Y年%m月%d号-%H点%M分')"
-          echo ::set-env name=RELEASE_TAG::"$(TZ=UTC-8 date +"%Y%m%d-%H%M")"
+          echo "RELEASE_NAME=$(TZ=UTC-8 date +'%Y年%m月%d号-%H点%M分')" >> $GITHUB_ENV
+          echo "RELEASE_TAG=$(TZ=UTC-8 date +'%Y%m%d-%H%M')" >> $GITHUB_ENV
 
       - name: 整理文件
         id: organizer
@@ -140,9 +138,9 @@ jobs:
 
           cd ${{ github.workspace }}
 
-          if [ -f ${{ github.workspace }}/config/${{matrix.target}}/organizer.sh ]; then
-            chmod +x ${{ github.workspace }}/config/${{matrix.target}}/organizer.sh
-            /bin/bash ${{ github.workspace }}/config/${{matrix.target}}/organizer.sh
+          if [ -f ${{ github.workspace }}/config/${{ matrix.target }}/organizer.sh ]; then
+            chmod +x ${{ github.workspace }}/config/${{ matrix.target }}/organizer.sh
+            /bin/bash ${{ github.workspace }}/config/${{ matrix.target }}/organizer.sh
           fi
 
           cd ${{ github.workspace }}/dist
@@ -151,17 +149,18 @@ jobs:
           sha256sum `ls -1 | sort` > sha256sums
 
           echo "::set-output name=status::success"
-          echo "::set-env name=FIRMWARE::$PWD"
+          echo "FIRMWARE=$PWD" >> $GITHUB_ENV
       
       - name: 上传奶牛快传及webtransfer
+        id: upload
         if: steps.organizer.outputs.status == 'success' && env.UPLOAD == 'true' && !cancelled()
         run: |
           curl -fsSL git.io/file-transfer | sh
-          ./transfer cow --block 2621440 -s -p 64 --no-progress ${FIRMWARE} 2>&1 | tee cowtransfer.log
-          echo "::set-env name=COWTRANSFER_URL::$(cat cowtransfer.log | grep https | cut -f3 -d" ")"
+          ./transfer cow --block 2621440 -s -p 64 --no-progress ${{ env.FIRMWARE }} 2>&1 | tee cowtransfer.log
+          echo "::set-output name=cowtransfer::$(cat cowtransfer.log | grep https | cut -f3 -d" ")"
           curl -fsSL git.io/file-transfer | sh
-          ./transfer wet -s -p 16 --no-progress ${FIRMWARE} 2>&1 | tee wetransfer.log
-          echo "::set-env name=WETRANSFER_URL::$(cat wetransfer.log | grep https | cut -f3 -d" ")"
+          ./transfer wet -s -p 16 --no-progress ${{ env.FIRMWARE }} 2>&1 | tee wetransfer.log
+          echo "::set-output name=wetransfer::$(cat wetransfer.log | grep https | cut -f3 -d" ")"
       
       - name: 版本发布
         if: steps.organizer.outputs.status == 'success' && env.RELEASE == 'true' && !cancelled()
@@ -169,14 +168,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
         with:
-          name: ${{ env.RELEASE_NAME }}  ❤️ | ${{matrix.target}}-OpenWrt 自动编译
+          name: ${{ env.RELEASE_NAME }}  ❤️ | ${{ matrix.target }}-OpenWrt 自动编译
           tag_name: ${{ env.RELEASE_TAG }}
           body: |
             ☆ 源码来源: ${{ env.REPO_URL }}
             ☆ 源码分支: ${{ env.REPO_BRANCH }}
 
-            🚀 奶牛快传: ${{ env.COWTRANSFER_URL }}
-            🐤 WeTransfer: ${{ env.WETRANSFER_URL }}
+            🚀 奶牛快传: ${{ steps.upload.outputs.cowtransfer }}
+            🐤 WeTransfer: ${{ steps.upload.outputs.wetransfer }}
 
             ✨ 当前源码版本:
 

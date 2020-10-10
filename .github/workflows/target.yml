@@ -20,13 +20,13 @@ jobs:
       - name: 环境变量配置
         run: |
           source ${{ github.workspace }}/config/${{ github.event.inputs.target }}/settings.ini
-          echo "::set-env name=REPO_URL::${REPO_URL}"
-          echo "::set-env name=REPO_BRANCH::${REPO_BRANCH}"
-          echo "::set-env name=SSH_ACTIONS::${SSH_ACTIONS}"
-          echo "::set-env name=UPLOAD::${UPLOAD}"
-          echo "::set-env name=RELEASE::${RELEASE}"
-          echo "::set-env name=WECHAT::${WECHAT}"
-          echo "::set-env name=TZ::${TZ}"
+          echo "REPO_URL=$REPO_URL" >> $GITHUB_ENV
+          echo "REPO_BRANCH=$REPO_BRANCH" >> $GITHUB_ENV
+          echo "SSH_ACTIONS=$SSH_ACTIONS" >> $GITHUB_ENV
+          echo "UPLOAD=$UPLOAD" >> $GITHUB_ENV
+          echo "RELEASE=$RELEASE" >> $GITHUB_ENV
+          echo "WECHAT=$WECHAT" >> $GITHUB_ENV
+          echo "TZ=$TZ" >> $GITHUB_ENV
       
       - name: 初始化编译环境
         run: |
@@ -36,16 +36,14 @@ jobs:
           sudo -E apt-get -qq install $(curl -fsSL git.io/depends-ubuntu-1804)
           sudo -E apt-get -qq autoremove --purge
           sudo -E apt-get -qq clean
-          sudo timedatectl set-timezone "$TZ"
+          sudo timedatectl set-timezone "${{ env.TZ }}"
 
       - name: 拉取源码
         run: |
           cd ${{ github.workspace }}
-          git clone --depth 1 $REPO_URL -b $REPO_BRANCH openwrt
+          git clone --depth 1 ${{ env.REPO_URL }} -b ${{ env.REPO_BRANCH }} openwrt
           useVersionInfo=$(git show -s --date=short --format="Author: %an<br/>date: %cd<br/>commit: %s<br/>commit hash: %H")
-          echo "::set-env name=useVersionInfo::$useVersionInfo"
-          echo "::set-env name=DATE::$(TZ=UTC-8 date "+%Y%m%d")"
-          echo "::set-env name=RELEASE_DATE::$(TZ=UTC-8 date "+%Y-%m-%d")"
+          echo "useVersionInfo=$useVersionInfo" >> $GITHUB_ENV
       
       - name: 执行自定义脚本
         run: |
@@ -111,8 +109,8 @@ jobs:
           make -j$(nproc) 2>&1 | tee -a build.log || make -j1 V=s 2>&1 | tee -a build.log
           ls -la ${{ github.workspace }}/openwrt/bin/targets/*/*/
           echo "::set-output name=status::success"
-          echo "::set-env name=RELEASE_NAME::$(TZ=UTC-8 date +'%Y年%m月%d号-%H点%M分')"
-          echo ::set-env name=RELEASE_TAG::"$(TZ=UTC-8 date +"%Y%m%d-%H%M")"
+          echo "RELEASE_NAME=$(TZ=UTC-8 date +'%Y年%m月%d号-%H点%M分')" >> $GITHUB_ENV
+          echo "RELEASE_TAG=$(TZ=UTC-8 date +'%Y%m%d-%H%M')" >> $GITHUB_ENV
       
       - name: 整理文件
         id: organizer
@@ -146,14 +144,15 @@ jobs:
           echo "::set-env name=FIRMWARE::$PWD"
       
       - name: 上传奶牛快传及webtransfer
+        id: upload
         if: steps.organizer.outputs.status == 'success' && env.UPLOAD == 'true' && !cancelled()
         run: |
           curl -fsSL git.io/file-transfer | sh
-          ./transfer cow --block 2621440 -s -p 64 --no-progress ${FIRMWARE} 2>&1 | tee cowtransfer.log
-          echo "::set-env name=COWTRANSFER_URL::$(cat cowtransfer.log | grep https | cut -f3 -d" ")"
+          ./transfer cow --block 2621440 -s -p 64 --no-progress ${{ env.FIRMWARE }} 2>&1 | tee cowtransfer.log
+          echo "::set-output name=cowtransfer::$(cat cowtransfer.log | grep https | cut -f3 -d" ")"
           curl -fsSL git.io/file-transfer | sh
-          ./transfer wet -s -p 16 --no-progress ${FIRMWARE} 2>&1 | tee wetransfer.log
-          echo "::set-env name=WETRANSFER_URL::$(cat wetransfer.log | grep https | cut -f3 -d" ")"
+          ./transfer wet -s -p 16 --no-progress ${{ env.FIRMWARE }} 2>&1 | tee wetransfer.log
+          echo "::set-output name=wetransfer::$(cat wetransfer.log | grep https | cut -f3 -d" ")"
       
       - name: 版本发布
         if: steps.organizer.outputs.status == 'success' && env.RELEASE == 'true' && !cancelled()
@@ -167,8 +166,8 @@ jobs:
             ☆ 源码来源: ${{ env.REPO_URL }}
             ☆ 源码分支: ${{ env.REPO_BRANCH }}
 
-            🚀 奶牛快传: ${{ env.COWTRANSFER_URL }}
-            🐤 WeTransfer: ${{ env.WETRANSFER_URL }}
+            🚀 奶牛快传: ${{ steps.upload.outputs.cowtransfer }}
+            🐤 WeTransfer: ${{ steps.upload.outputs.wetransfer }}
 
             ✨ 当前源码版本:
 
